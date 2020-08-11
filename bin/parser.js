@@ -95,33 +95,14 @@ async function main() {
 
         if (!program.format || program.format === 'RML') {
           const y2r = new Y2R({class: !!program.class, externalReferences});
-
-          try {
-            triples = await y2r.convert(inputData);
-          } catch (e) {
-            if (e.code === 'INVALID_YARRRML') {
-              if (e.validationErrors.length === 1) {
-                console.error(`YARRRML document is invalid: ${e.validationErrors[0].message}.`);
-              } else {
-                console.error('YARRRML document is invalid:');
-                for (const err of e.validationErrors) {
-                  console.error(`\t - ${err.message}.`);
-                }
-              }
-            } else {
-              console.error(e);
-            }
-
-            process.exit(1);
-          }
-
+          triples = await convert(y2r, inputData);
           prefixes.rml = namespaces.rml;
           prefixes.ql = namespaces.ql;
           prefixes[''] = y2r.getBaseIRI();
           prefixes = Object.assign({}, prefixes, y2r.getPrefixes());
         } else {
           const y2r = new Y2R2({class: !!program.class, externalReferences});
-          triples = y2r.convert(inputData);
+          triples = await convert(y2r, inputData);
           prefixes[''] = y2r.getBaseIRI();
           prefixes = Object.assign({}, prefixes, y2r.getPrefixes());
         }
@@ -158,5 +139,32 @@ async function main() {
     } else {
       watch(program.input, program.output, program.format);
     }
+  }
+}
+
+/**
+ * This method converts YARRRML rules to [R2]RML rules.
+ * @param converter - The converter to use.
+ * @param inputData - The YARRRML rules to convert.
+ * @returns {Promise<void>} - The resulting [R2]RML rules.
+ */
+async function convert(converter, inputData) {
+  try {
+    return await converter.convert(inputData);
+  } catch (e) {
+    if (e.code === 'INVALID_YARRRML') {
+      if (e.validationErrors.length === 1) {
+        console.error(`YARRRML document is invalid: ${e.validationErrors[0].message}.`);
+      } else {
+        console.error('YARRRML document is invalid:');
+        for (const err of e.validationErrors) {
+          console.error(`\t - ${err.message}.`);
+        }
+      }
+    } else {
+      console.error(e);
+    }
+
+    process.exit(1);
   }
 }
