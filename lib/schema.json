@@ -105,7 +105,16 @@
                   {
                     "type": "string"
                   },
-                  {"$ref": "#/$defs/function"}
+                  {"$ref": "#/$defs/function"},
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "blank"
+                      }
+                    }
+                  }
                 ]
               }
             },
