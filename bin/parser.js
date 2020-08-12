@@ -38,6 +38,7 @@ program.option('-o, --output <file>', 'output file (default: stdout)');
 program.option('-f, --format <format>', 'RML or R2RML (default: RML)');
 program.option('-w, --watch', 'watch for file changes');
 program.option('-e, --external <value>', 'external references (key=value, can be used multiple times', collect, []); // We support multiple uses of this option.
+program.option('--skip-validation', 'skip validation of YARRRML documents',  false);
 program.parse(process.argv);
 
 main();
@@ -95,14 +96,14 @@ async function main() {
 
         if (!program.format || program.format === 'RML') {
           const y2r = new Y2R({class: !!program.class, externalReferences});
-          triples = await convert(y2r, inputData);
+          triples = await convert(y2r, inputData, program.skipValidation);
           prefixes.rml = namespaces.rml;
           prefixes.ql = namespaces.ql;
           prefixes[''] = y2r.getBaseIRI();
           prefixes = Object.assign({}, prefixes, y2r.getPrefixes());
         } else {
           const y2r = new Y2R2({class: !!program.class, externalReferences});
-          triples = await convert(y2r, inputData);
+          triples = await convert(y2r, inputData, program.skipValidation);
           prefixes[''] = y2r.getBaseIRI();
           prefixes = Object.assign({}, prefixes, y2r.getPrefixes());
         }
@@ -146,11 +147,12 @@ async function main() {
  * This method converts YARRRML rules to [R2]RML rules.
  * @param converter - The converter to use.
  * @param inputData - The YARRRML rules to convert.
+ * @param skipValidation - Set to true if the validation of the YARRRML rules should be skipped.
  * @returns {Promise<void>} - The resulting [R2]RML rules.
  */
-async function convert(converter, inputData) {
+async function convert(converter, inputData, skipValidation = false) {
   try {
-    return await converter.convert(inputData);
+    return await converter.convert(inputData, {skipValidation});
   } catch (e) {
     if (e.code === 'INVALID_YARRRML') {
       if (e.validationErrors.length === 1) {
